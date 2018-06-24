@@ -57,9 +57,9 @@ hasher = sha.new()
 hasher.update(act30)
 hasher.update(rng)
 lichash = AddHyphens(lichash[:3] + SHAToBase30(hasher.hexdigest().upper()))
-part5 = format(loop(23, lichash), '05x') + format(loop(161, lichash), '05x') + format(loop(47, lichash),
-                                                                                      '05x') + format(loop(9, lichash),
-                                                                                                      '05x')
+part5 = format(loop(23, lichash), '05x') + format(loop(161, lichash), '05x') + format(loop(47, lichash),'05x') + format(loop(9, lichash), '05x')
+                                                                                      
+                                                                                                     
 part5 = BaseConvert(part5.upper(), BASE16, BASE30)
 while len(part5) < 17:
     part5 = '1' + part5
