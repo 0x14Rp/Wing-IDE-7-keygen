@@ -1,5 +1,5 @@
-# Wing-IDE-6-keygen
-Keygen for activation Wing IDE V6
+# Wing-IDE-7-keygen
+Keygen for activation Wing IDE V7
 # Use
 ```
 $python keygen.py
