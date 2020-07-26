@@ -1,8 +1,8 @@
 # Wing-IDE-7-keygen
 Keygen for activation Wing IDE V7
 # Use
-```
-$python keygen.py
+```sh
+$ python2 keygen.py
 ```
 
 - add ID
