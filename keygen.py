@@ -1,73 +1,71 @@
-import string
-import random
-import sha
+#!/usr/bin/env python3
 
-BASE16 = "0123456789ABCDEF"
+import hashlib
+import itertools as it
+import random
+from typing import Iterable
+
 BASE30 = "123456789ABCDEFGHJKLMNPQRTVWXY"
 
 
-def randomstring(size=20, chars=string.ascii_uppercase + string.digits):
-    return "".join((random.choice(chars) for _ in range(size)))
+def last_bits(number: int, n: int) -> int:
+    return number & ((1 << n) - 1)
 
 
-def BaseConvert(number, fromdigits, todigits, ignore_negative=True):
-    if not ignore_negative and str(number)[0] == "-":
-        number = str(number)[1:]
-        neg = 1
-    else:
-        neg = 0
-    x = long(0)
-    for digit in str(number):
-        x = x * len(fromdigits) + fromdigits.index(digit)
+def group(iterable, size: int, fill=None):
+    """Groups iterable in tuples"""
+    yield from it.zip_longest(*(iter(iterable),) * size, fillvalue=fill)
 
+
+def to_b30(number: int) -> str:
+    """Converts number to base30"""
     res = ""
-    while x > 0:
-        digit = x % len(todigits)
-        res = todigits[digit] + res
-        x /= len(todigits)
+    while number:
+        number, digit = divmod(number, 30)
+        res += BASE30[digit]
 
-    if neg:
-        res = "-" + res
-    return res
+    return res[::-1]
 
 
-def AddHyphens(code):
-    return code[:5] + "-" + code[5:10] + "-" + code[10:15] + "-" + code[15:]
+def add_hyphens(code: Iterable[str], n: int = 5) -> str:
+    return "-".join("".join(i) for i in group(code, n, ""))
 
 
-def SHAToBase30(digest):
-    tdigest = "".join([c for i, c in enumerate(digest) if i / 2 * 2 == i])
-    result = BaseConvert(tdigest, BASE16, BASE30)
-    while len(result) < 17:
-        result = "1" + result
-    return result
-
-
-def loop(ecx, lichash):
+def loop(ecx: int, chars: Iterable[str]) -> int:
     part = 0
-    for c in lichash:
-        part = ecx * part + ord(c) & 1048575
-    return part
+    for c in chars:
+        part *= ecx
+        part += ord(c)
+    return part & ((1 << 20) - 1)
 
 
-rng = AddHyphens("CN" + randomstring(18, "123456789ABCDEFGHJKLMNPQRTVWXY"))
-print("License id: " + rng)
-act30 = raw_input("Enter request code:")
-lichash = act30
-hasher = sha.new()
-hasher.update(act30)
-hasher.update(rng)
-lichash = AddHyphens(lichash[:3] + SHAToBase30(hasher.hexdigest().upper()))
-part5 = (
-    format(loop(221, lichash), "05x")
-    + format(loop(13, lichash), "05x")
-    + format(loop(93, lichash), "05x")
-    + format(loop(27, lichash), "05x")
-)
+def license_hash(license: str, request: str) -> str:
+    hasher = hashlib.sha1()
+    hasher.update(request.encode("ascii"))
+    hasher.update(license.encode("ascii"))
+    return add_hyphens(
+        request[:3] + to_b30(int(hasher.hexdigest().upper()[::2], 16)).rjust(17, "1")
+    )
 
-part5 = BaseConvert(part5.upper(), BASE16, BASE30)
-while len(part5) < 17:
-    part5 = "1" + part5
 
-part5 = "AXX" + part5
-print("Activation code: " + AddHyphens(part5))
+def activation_code(lichash: str) -> str:
+    return add_hyphens(
+        "AXX"
+        + to_b30(
+            sum(loop(j, lichash) << i * 20 for i, j in enumerate((27, 93, 13, 221)))
+        ).ljust(17, "1")
+    )
+
+
+def interactive():
+    license_id = add_hyphens(
+        it.chain("CN", random.choices("123456789ABCDEFGHJKLMNPQRTVWXY", k=18))
+    )
+    print("License id:", license_id)
+    request_code = input("Enter request code: ").strip()
+
+    print("Activation code:", activation_code(license_hash(license_id, request_code)))
+
+
+if __name__ == "__main__":
+    interactive()
